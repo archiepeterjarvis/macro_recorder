@@ -1,4 +1,5 @@
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.screenmanager import Screen, ScreenManager
@@ -26,14 +27,14 @@ class DemoScreen(Screen):
         layout.add_widget(control_layout)
 
     def on_start(self, *args):
-        pass
+        self.macro_recorder.start()
 
     def on_stop(self, *args):
+        self.macro_recorder.stop()
         self.macro_recorder.save_actions("demo.json")
 
     def on_replay(self, *args):
-        self.macro_recorder.load_actions("demo.json")
-        self.macro_recorder.play()
+        Clock.schedule_once(lambda dt: self.macro_recorder.play(), 1)
 
 
 class DemoApp(App):

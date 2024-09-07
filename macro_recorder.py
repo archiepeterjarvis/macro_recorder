@@ -4,18 +4,15 @@ import time
 from enum import Enum
 
 from kivy import Logger
-from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics import Color, Ellipse
 
 MACROS_PATH = "./macros/"
 
 
 class MacroActionType(Enum):
-    CLICK = 1
-    DRAG = 2
-    INPUT = 3
+    MOUSE_DOWN = 1
+    MOUSE_UP = 2
 
 
 class MacroAction:
@@ -43,16 +40,34 @@ class MacroRecorder:
         if cls._instance is None:
             cls._instance = super(MacroRecorder, cls).__new__(cls)
             cls._instance.actions = []
-            cls._instance.sm = App.get_running_app().sm
+            cls._instance.recording = False
         return cls._instance
 
+    def start(self):
+        Logger.info("Recording started")
+        self.recording = True
+
+    def stop(self):
+        Logger.info("Recording stopped")
+        self.recording = False
+
     def record(self, action: MacroAction):
+        if not self.recording:
+            return
+
         Logger.info(f"Recording action: {action}")
+        action.action_args['time'] = time.time()
+
         self.actions.append(action)
-        Logger.info(f"Actions: {self.actions}")
 
     def save_actions(self, filename):
         Logger.info(f"Saving actions to {filename}")
+
+        # Alter the time argument so that it is relative to the start of the recording
+        start_time = self.actions[0].action_args['time']
+        for action in self.actions:
+            action.action_args['time'] = action.action_args['time'] - start_time
+
         actions_dict = [action.to_dict() for action in self.actions]
         with open(os.path.join(MACROS_PATH, filename), "w") as f:
             json.dump(actions_dict, f)
@@ -65,26 +80,29 @@ class MacroRecorder:
 
     def play(self):
         Logger.info("Playing actions")
-        for action in self.actions:
-            if action.action_type == MacroActionType.CLICK:
-                pos = action.action_args['pos']
-                self._simulate_click(pos)
-            elif action.action_type == MacroActionType.DRAG:
-                start_pos = action.action_args['start_pos']
-                end_pos = action.action_args['end_pos']
-                self._simulate_drag(start_pos, end_pos)
-            elif action.action_type == MacroActionType.INPUT:
-                text = action.action_args['text']
-                self._simulate_input(text)
 
-    def _simulate_click(self, pos):
-        x, y = pos
-        Logger.info(f"Simulating click at {x}, {y}")
+        def _play(index):
+            if index < len(self.actions):
+                action = self.actions[index]
+                if action.action_type == MacroActionType.MOUSE_DOWN:
+                    self._simulate_mouse_down(action.action_args['pos'])
+                elif action.action_type == MacroActionType.MOUSE_UP:
+                    self._simulate_mouse_up(action.action_args['pos'])
+
+                if index + 1 < len(self.actions):
+                    Clock.schedule_once(lambda dt: _play(index + 1), self.actions[index + 1].action_args['time'])
+        _play(0)
+
+    @staticmethod
+    def _simulate_mouse_down(pos):
+        x, y = Window.size[0] - pos[0], Window.size[1] - pos[1]
+        Logger.info(f"Simulating mouse down at {x}, {y}")
+
         Window.dispatch('on_mouse_down', x, y, 'left', {})
-        Clock.schedule_once(lambda dt: Window.dispatch('on_mouse_up', x, y, 'left', {}), 0.1)
 
-    def _simulate_drag(self, start_pos, end_pos):
-        Logger.warning("Drag simulation not implemented yet")
+    @staticmethod
+    def _simulate_mouse_up(pos):
+        x, y = Window.size[0] - pos[0], Window.size[1] - pos[1]
+        Logger.info(f"Simulating mouse up at {x}, {y}")
 
-    def _simulate_input(self, text):
-        Logger.warning("Input simulation not implemented yet")
+        Window.dispatch('on_mouse_up', x, y, 'left', {})
