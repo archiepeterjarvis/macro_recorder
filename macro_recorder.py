@@ -80,6 +80,7 @@ class MacroRecorder:
 
     def play(self):
         Logger.info("Playing actions")
+        self.load_actions("demo.json")
 
         def _play(index):
             if index < len(self.actions):
@@ -90,7 +91,7 @@ class MacroRecorder:
                     self._simulate_mouse_up(action.action_args['pos'])
 
                 if index + 1 < len(self.actions):
-                    Clock.schedule_once(lambda dt: _play(index + 1), self.actions[index + 1].action_args['time'])
+                    Clock.schedule_once(lambda dt: _play(index + 1), self.actions[index + 1].action_args['time'] - self.actions[index].action_args['time'])
         _play(0)
 
     @staticmethod
