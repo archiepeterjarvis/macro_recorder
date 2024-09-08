@@ -1,4 +1,5 @@
 from kivy import Logger
+from kivy.core.window import Window
 from kivy.uix.button import Button
 
 import macro_recorder
@@ -14,23 +15,27 @@ class ButtonBase(Button):
             if not self.macro_recorder.recording:
                 return True
 
+            norm_pos = (touch.pos[0] / Window.size[0], touch.pos[1] / Window.size[1])
+
             self.macro_recorder.record(macro_recorder.MacroAction(
                 action_type=macro_recorder.MacroActionType.MOUSE_DOWN,
                 action_args={
-                    "pos": touch.pos
+                    "pos": norm_pos
                 }
             ))
-            Logger.info(f"ButtonBase: Mouse down at {touch.pos}")
+            Logger.info(f"ButtonBase: Mouse down at {norm_pos} (touch.pos={touch.pos})")
 
     def on_touch_up(self, touch):
         if super(ButtonBase, self).on_touch_up(touch):
             if not self.macro_recorder.recording:
                 return True
 
+            norm_pos = (touch.pos[0] / Window.size[0], touch.pos[1] / Window.size[1])
+
             self.macro_recorder.record(macro_recorder.MacroAction(
                 action_type=macro_recorder.MacroActionType.MOUSE_UP,
                 action_args={
-                    "pos": touch.pos
+                    "pos": norm_pos
                 }
             ))
-            Logger.info(f"ButtonBase: Mouse up at {touch.pos}")
+            Logger.info(f"ButtonBase: Mouse up at {norm_pos} (touch.pos={touch.pos})")

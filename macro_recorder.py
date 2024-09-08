@@ -96,14 +96,16 @@ class MacroRecorder:
 
     @staticmethod
     def _simulate_mouse_down(pos):
-        x, y = Window.size[0] - pos[0], Window.size[1] - pos[1]
+        scaled_pos = (pos[0] * Window.size[0], pos[1] * Window.size[1])
+        x, y = Window.size[0] - scaled_pos[0], Window.size[1] - scaled_pos[1]
         Logger.info(f"Simulating mouse down at {x}, {y}")
 
         Window.dispatch('on_mouse_down', x, y, 'left', {})
 
     @staticmethod
     def _simulate_mouse_up(pos):
-        x, y = Window.size[0] - pos[0], Window.size[1] - pos[1]
+        scaled_pos = (pos[0] * Window.size[0], pos[1] * Window.size[1])
+        x, y = Window.size[0] - scaled_pos[0], Window.size[1] - scaled_pos[1]
         Logger.info(f"Simulating mouse up at {x}, {y}")
 
         Window.dispatch('on_mouse_up', x, y, 'left', {})
